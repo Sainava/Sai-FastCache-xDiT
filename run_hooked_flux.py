@@ -4,6 +4,8 @@ import shutil
 import os
 # pyrefly: ignore [missing-import]
 from diffusers import FluxPipeline
+# pyrefly: ignore [missing-import]
+from transformers import BitsAndBytesConfig
 from hidden_state_capture_hook import HiddenStateCaptureHook
 
 def main():
@@ -16,12 +18,18 @@ def main():
         raise ValueError("HF_TOKEN environment variable not found. Please set it before running.")
 
     print(f"Loading {model_id}...")
+
+    quant_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_compute_dtype=torch.bfloat16, # Critical for Flux to prevent NaNs
+    bnb_4bit_quant_type="nf4"
+)
     
     # 3. Pass the token to the pipeline safely
     pipe = FluxPipeline.from_pretrained(
         model_id, 
-        torch_dtype=torch.bfloat16,
-        token=hf_token 
+        quantization_config=quant_config,  # <-- Load the quantized model
+        token=hf_token
     )
     
     # 4. Use CPU offloading to prevent OOM on their machine
