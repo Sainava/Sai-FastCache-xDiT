@@ -47,7 +47,15 @@ class FastCacheAccelerator(nn.Module):
         self.layer_cache_hits = {}
         
         # Linear approximation for static tokens
-        self.cache_projection = nn.Linear(model.config.hidden_size, model.config.hidden_size)
+        if hasattr(model, 'config') and hasattr(model.config, 'hidden_size'):
+            hidden_size = model.config.hidden_size
+        elif hasattr(model, 'hidden_size'):
+            hidden_size = model.hidden_size
+        elif hasattr(model, 'dim'):
+            hidden_size = model.dim
+        else:
+            hidden_size = 3072
+        self.cache_projection = nn.Linear(hidden_size, hidden_size)
         
         logger.info(f"Initialized FastCache with thresholds: cache={cache_ratio_threshold}, motion={motion_threshold}")
     
